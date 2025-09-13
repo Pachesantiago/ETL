@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ETL OtakuLATAM - Dashboard</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/checkbox.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-database"></i>
+                    <h1>ETL OtakuLATAM</h1>
+                </div>
+                <div class="header-actions">
+                    <div class="connection-status">
+                        <div id="connectionStatus">🔴 Verificando conexión...</div>
+                        <div id="dbStatus">🔴 Verificando BD...</div>
+                    </div>
+                    <button id="runETLBtn" class="btn btn-primary">
+                        <i class="fas fa-bolt"></i> Ejecutar ETL
+                    </button>
+                    <button id="refreshBtn" class="btn btn-secondary">
+                        <i class="fas fa-sync"></i> Actualizar
+                    </button>
+                    <button class="btn btn-secondary" onclick="resetData()">
+                        <i class="fas fa-trash"></i> Limpiar Datos
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="sidebar-section">
+                    <h3><i class="fas fa-upload"></i> Cargar Datos</h3>
+                    <div class="file-upload-area" id="fileUploadArea">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Arrastra archivos aquí o haz clic para seleccionar</p>
+                        <p class="file-types">CSV, Excel (.xlsx, .xls)</p>
+                        <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" multiple>
+                    </div>
+
+                    <!-- Checkbox "Insertar en base de datos" eliminado según solicitud -->
+                    <!-- <div class="upload-options" style="margin-top: 15px;">
+                        <label class="checkbox-option">
+                            <input type="checkbox" id="insertToDatabase" checked>
+                            <span class="checkmark"></span>
+                            Insertar en base de datos
+                        </label>
+                        <small class="option-help">Si está marcado, los datos se insertarán automáticamente en la BD</small>
+                    </div> -->
+
+                    <div class="import-actions" style="margin-top: 15px;">
+                    </div>
+                </div>
+
+
+                <div class="sidebar-section" id="exportSection" style="display: none;">
+                    <h3><i class="fas fa-download"></i> Exportar</h3>
+                    
+                    <button class="btn btn-export" onclick="exportData('json')">
+                        <i class="fas fa-file-code"></i> Exportar JSON
+                    </button>
+                    
+                    <button class="btn btn-export" onclick="exportData('csv')">
+                        <i class="fas fa-file-csv"></i> Exportar CSV
+                    </button>
+                    
+                    <button class="btn btn-export" onclick="exportData('sql')">
+                        <i class="fas fa-database"></i> Script SQL
+                    </button>
+                    
+                    <button class="btn btn-export" onclick="exportAndInsertToDatabase()" id="exportInsertBtn">
+                        <i class="fas fa-database"></i> Exportar e Insertar en BD
+                    </button>
+                    
+                    <div class="export-divider"></div>
+                    
+                    <button class="btn btn-cloud" onclick="exportToCloud()" id="exportCloudBtn">
+                        <i class="fas fa-cloud-upload-alt"></i> Exportar a la Nube
+                    </button>
+                    
+                    <button class="btn btn-secondary btn-sm" onclick="openCloudDashboard()">
+                        <i class="fas fa-cloud"></i> Dashboard Nube
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="content">
+                <!-- Stats Cards -->
+                <div class="stats-grid" id="statsGrid" style="display: none;">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalRecords">0</h3>
+                            <p>Total de registros</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-venus-mars"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="genderDistribution">0/0</h3>
+                            <p>H/M</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-heartbeat"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="illnessRate">0%</h3>
+                            <p>Con enfermedad</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="avgIncome">$0</h3>
+                            <p>Ingreso promedio</p>
+                        </div>
+                    </div>
+
+                    <!-- Estadísticas del Backend -->
+                    <div class="stat-card backend-stats">
+                        <div class="stat-icon">
+                            <i class="fas fa-cogs"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalExecutions">0</h3>
+                            <p>Ejecuciones ETL</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card backend-stats">
+                        <div class="stat-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalProcessed">0</h3>
+                            <p>Registros procesados</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card backend-stats">
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="lastExecution">Nunca</h3>
+                            <p>Última ejecución</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card backend-stats">
+                        <div class="stat-icon">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="dbRecords">0</h3>
+                            <p>Registros en BD</p>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- Data Table Section -->
+                <div class="table-container" id="dataTableContainer" style="display: none;">
+                    <div class="table-header">
+                        <h2><i class="fas fa-table"></i> Datos Transformados</h2>
+                        <div class="table-actions">
+                            <input type="text" id="searchInput" placeholder="Buscar en los datos..." />
+                            <select id="recordsPerPage">
+                                <option value="10">10 por página</option>
+                                <option value="25" selected>25 por página</option>
+                                <option value="50">50 por página</option>
+                                <option value="100">100 por página</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Filters Section -->
+                    <div class="table-filters" id="tableFilters">
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                <label for="genderFilter">Género:</label>
+                                <select id="genderFilter">
+                                    <option value="">Todos</option>
+                                    <option value="Masculino">Masculino</option>
+                                    <option value="Femenino">Femenino</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label for="illnessFilter">Enfermedad:</label>
+                                <select id="illnessFilter">
+                                    <option value="">Todos</option>
+                                    <option value="Sí">Con enfermedad</option>
+                                    <option value="No">Sin enfermedad</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label for="ageRangeFilter">Rango de Edad:</label>
+                                <select id="ageRangeFilter">
+                                    <option value="">Todos</option>
+                                    <option value="18-25">18-25 años</option>
+                                    <option value="26-35">26-35 años</option>
+                                    <option value="36-45">36-45 años</option>
+                                    <option value="46-55">46-55 años</option>
+                                    <option value="56+">56+ años</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <button class="btn btn-secondary btn-sm" onclick="clearAllFilters()">
+                                    <i class="fas fa-times"></i> Limpiar Filtros
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Table Wrapper -->
+                    <div class="table-wrapper">
+                        <table class="data-table" id="dataTable">
+                            <thead>
+                                <tr id="tableHeaders">
+                                    <!-- Headers will be populated dynamically -->
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody">
+                                <!-- Data will be populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="table-pagination">
+                        <div class="pagination-info">
+                            <span id="paginationInfo">Mostrando 0 de 0 registros</span>
+                        </div>
+                        <div class="pagination-controls">
+                            <button class="btn btn-secondary btn-sm" id="prevPageBtn" onclick="changePage(-1)">
+                                <i class="fas fa-chevron-left"></i> Anterior
+                            </button>
+                            <span id="pageNumbers"></span>
+                            <button class="btn btn-secondary btn-sm" id="nextPageBtn" onclick="changePage(1)">
+                                Siguiente <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="charts-container" id="chartsContainer" style="display: none;">
+                    <div class="charts-grid">
+                        <div class="chart-card">
+                            <h3><i class="fas fa-chart-bar"></i> Distribución por Género</h3>
+                            <canvas id="genderChart"></canvas>
+                        </div>
+                        
+                        <div class="chart-card">
+                            <h3><i class="fas fa-chart-line"></i> Distribución de Ingresos</h3>
+                            <canvas id="incomeChart"></canvas>
+                        </div>
+                        
+                        <div class="chart-card">
+                            <h3><i class="fas fa-chart-pie"></i> Estado de Salud</h3>
+                            <canvas id="healthChart"></canvas>
+                        </div>
+                        
+                        <div class="chart-card">
+                            <h3><i class="fas fa-chart-area"></i> Distribución de Edades</h3>
+                            <canvas id="ageChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Welcome Screen -->
+                <div class="welcome-screen" id="welcomeScreen">
+                    <div class="welcome-content">
+                        <i class="fas fa-database welcome-icon"></i>
+                        <h2>Bienvenido al Dashboard ETL OtakuLATAM</h2>
+                        <p>Sube un archivo CSV o Excel para comenzar a transformar y visualizar tus datos</p>
+                        <div class="welcome-features">
+                            <div class="feature">
+                                <i class="fas fa-upload"></i>
+                                <span>Carga archivos CSV/Excel</span>
+                            </div>
+                            <div class="feature">
+                                <i class="fas fa-cogs"></i>
+                                <span>Transformación automática</span>
+                            </div>
+                            <div class="feature">
+                                <i class="fas fa-chart-bar"></i>
+                                <span>Visualización interactiva</span>
+                            </div>
+                            <div class="feature">
+                                <i class="fas fa-download"></i>
+                                <span>Exportación múltiple</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Procesando datos...</p>
+        </div>
+    </div>
+
+
+    <script src="src/config.js"></script>
+    <script src="src/main.js"></script>
+</body>
+</html>

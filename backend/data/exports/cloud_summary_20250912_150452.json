@@ -1,0 +1,11 @@
+{
+  "export_date": "2025-09-12T15:04:52.050044",
+  "service_type": "local",
+  "total_files": 0,
+  "files": [],
+  "connection_status": {
+    "connected": false,
+    "service": "Local Storage",
+    "message": "Usando almacenamiento local"
+  }
+}

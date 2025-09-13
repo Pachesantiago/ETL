@@ -1,0 +1,43 @@
+{
+  "metadata": {
+    "generated_at": "2025-09-13T06:41:08.209017",
+    "total_records": 50,
+    "total_columns": 11,
+    "columns": [
+      "nombre",
+      "edad_anos",
+      "edad_lustros",
+      "genero_original",
+      "genero_es",
+      "ingreso_usd",
+      "ingreso_cop",
+      "trm_utilizada",
+      "enfermedad_original",
+      "enfermedad_es",
+      "fecha_procesamiento"
+    ]
+  },
+  "statistics": {
+    "age_stats": {
+      "avg_years": 38.58,
+      "avg_lustros": 7.716,
+      "min_years": 19,
+      "max_years": 62
+    },
+    "income_stats": {
+      "avg_usd": 60577.56,
+      "avg_cop": 236630487.97439998,
+      "min_usd": 25135.0,
+      "max_usd": 96772.0
+    },
+    "gender_distribution": {
+      "Masculino": 31,
+      "Femenino": 19
+    },
+    "illness_distribution": {
+      "No": 33,
+      "Sí": 17
+    },
+    "trm_used": 3906.24
+  }
+}
